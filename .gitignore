@@ -9,3 +9,5 @@ out
 gen
 /target/
 /src/test/
+/readme.md
+/.idea/

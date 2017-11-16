@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation=
+               "http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+               http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+               http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+               http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+               http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+        ">
+    <!--修改spring的动态代理模式-->
+    <aop:config proxy-target-class="true"/>
+    <!--配置权限注解的扫描程序-->
+    <bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
+        <property name="securityManager" ref="securityManager"/>
+    </bean>
+    <!--配置自定义的realm-->
+    <bean id="userRealm" class="com._520it.crm.realm.UserRealm">
+        <property name="employeeService" ref="employeeServiceImpl"/>
+        <property name="permissionService" ref="permissionServiceImpl"/>
+        <property name="roleService" ref="roleServiceImpl"/>
+    </bean>
+    <!--配置securityManager安全管理器-->
+    <bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+        <property name="realm" ref="userRealm"/>
+    </bean>
+    <bean id="extendFormAuthenticationFilter" class="com._520it.crm.filter.ExtendFormAuthenticationFilter"/>
+    <!--配置shiroFilterFactory创建bean对象-->
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+        <property name="securityManager" ref="securityManager"/>
+        <property name="loginUrl" value="/login"/>
+        <property name="successUrl" value="/main"/>
+        <property name="filters">
+            <map>
+                <entry key="authc" value-ref="extendFormAuthenticationFilter"/>
+            </map>
+        </property>
+        <property name="filterChainDefinitions">
+            <value>
+                /static/**=anon
+                /**=authc
+            </value>
+        </property>
+    </bean>
+</beans>

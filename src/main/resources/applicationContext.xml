@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation=
+               "http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+               http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+               http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+               http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+        ">
+
+    <context:property-placeholder location="classpath:jdbc.properties" system-properties-mode="NEVER"/>
+
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="driverClassName" value="${jdbc.driverClassName}"/>
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+    </bean>
+
+    <bean class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="configLocation" value="classpath:mybatis-config.xml"/>
+        <property name="dataSource" ref="dataSource"/>
+        <property name="typeAliasesPackage" value="com._520it.crm.domain"/>
+        <property name="mapperLocations" value="classpath:com/_520it/crm/mapper/*Mapper.xml"/>
+    </bean>
+
+    <bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <tx:advice id="Advice" transaction-manager="txManager">
+        <tx:attributes>
+            <tx:method name="get*" read-only="true" propagation="SUPPORTS"/>
+            <tx:method name="list*" read-only="true" propagation="SUPPORTS"/>
+            <tx:method name="query*" read-only="true" propagation="SUPPORTS"/>
+            <tx:method name="select*" read-only="true" propagation="SUPPORTS"/>
+            <tx:method name="*" propagation="REQUIRED"/>
+        </tx:attributes>
+    </tx:advice>
+
+    <aop:config>
+        <aop:pointcut id="crudPc" expression="execution(* com._520it.crm.service.*.*(..))"/>
+        <aop:advisor advice-ref="Advice" pointcut-ref="crudPc"/>
+    </aop:config>
+
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com._520it.crm.mapper"/>
+    </bean>
+
+    <context:component-scan base-package="com._520it.crm"/>
+    <!--系统日志的配置-->
+    <!--what-->
+    <bean id="logAspect" class="com._520it.crm.util.LogAspect">
+        <property name="systemLogService" ref="systemLogServiceImpl"/>
+    </bean>
+    <aop:config>
+        <!--where-->
+        <aop:pointcut id="logPc" expression="execution(* com._520it.crm.service.impl.EmployeeServiceImpl.queryForPage(..))"/>
+        <!--when-->
+        <aop:aspect ref="logAspect">
+            <aop:after method="write" pointcut-ref="logPc"/>
+        </aop:aspect>
+    </aop:config>
+</beans>
